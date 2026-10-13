@@ -18,5 +18,12 @@ class WindowsScriptTests(unittest.TestCase):
         self.assertIn("한 문장", prompts[0])
         self.assertIn("Python으로", prompts[1])
 
+    def test_offensive_resume_script_refuses_duplicate_rows(self) -> None:
+        content = (ROOT / "scripts" / "windows" / "resume_offensive_benchmark.ps1").read_bytes()
+
+        self.assertTrue(content.isascii())
+        self.assertIn(b'Where-Object { $_.task_id -like "offensive-*" }', content)
+        self.assertIn(b"Refusing to append duplicates", content)
+
 if __name__ == "__main__":
     unittest.main()
