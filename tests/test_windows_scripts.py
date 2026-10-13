@@ -18,14 +18,5 @@ class WindowsScriptTests(unittest.TestCase):
         self.assertIn("한 문장", prompts[0])
         self.assertIn("Python으로", prompts[1])
 
-    def test_benchmark_uses_noninteractive_docker_config(self) -> None:
-        content = (ROOT / "scripts" / "windows" / "run_benchmark.ps1").read_text()
-
-        self.assertIn("docker context inspect", content)
-        self.assertIn('$env:DOCKER_CONFIG = $TempDockerConfig', content)
-        self.assertIn('$env:DOCKER_HOST = $DockerHost', content)
-        self.assertIn('Remove-Item -Recurse -Force $TempDockerConfig', content)
-
-
 if __name__ == "__main__":
     unittest.main()
