@@ -556,7 +556,7 @@ def main(argv: list[str] | None = None) -> int:
 
     args.review_bundle.mkdir(parents=True, exist_ok=True)
     environment_path = args.review_bundle / "environment_snapshot.json"
-    environment = json.loads(environment_path.read_text(encoding="utf-8")) if environment_path.exists() else {}
+    environment = json.loads(environment_path.read_text(encoding="utf-8-sig")) if environment_path.exists() else {}
     official, reason = _official_gate(rows, environment, evaluation)
     recommendation = _recommend(aggregates, official, reason)
     (args.review_bundle / "aggregate_scores.json").write_text(json_path.read_text(encoding="utf-8"), encoding="utf-8")

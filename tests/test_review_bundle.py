@@ -64,7 +64,7 @@ class ReviewBundleTests(unittest.TestCase):
             review = root / "review"
             review.mkdir()
             (review / "environment_snapshot.json").write_text(
-                json.dumps({"execution_role": "development", "os": "Darwin"}), encoding="utf-8"
+                json.dumps({"execution_role": "development", "os": "Windows"}), encoding="utf-8-sig"
             )
             self.assertEqual(main([str(raw), "--output-dir", str(output), "--review-bundle", str(review)]), 0)
             recommendation = json.loads((review / "codex_recommendation.json").read_text(encoding="utf-8"))
