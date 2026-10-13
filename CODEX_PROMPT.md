@@ -212,6 +212,7 @@ llm --model <alias> --mode <mode>
 - Hallucination
 - Performance
 - Context Stability
+- Authorized Offensive Lab (isolated Docker target only)
 
 ## Phase 7 — Raw Results
 
@@ -286,6 +287,7 @@ review_bundle/
 ├─ raw_results.jsonl
 ├─ aggregate_scores.json
 ├─ aggregate_scores.csv
+├─ offensive_summary.json
 ├─ codex_recommendation.json
 ├─ final_report.md
 └─ README.md

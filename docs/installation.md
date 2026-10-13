@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Windows target: Python 3.11+, Git, NVIDIA driver, 약 500 GB 여유 공간
+- Windows target: Python 3.11+, Git, NVIDIA driver, Docker Desktop, 약 500 GB 여유 공간
 - Ollama는 `scripts/windows/install_runtime.ps1`로 설치하거나 공식 설치 프로그램을 사용합니다.
 - 모든 API 요청은 `127.0.0.1:11434`로 제한합니다.
 
@@ -14,6 +14,8 @@
 4. `verify_first_model.ps1`가 추론과 `ollama ps`의 GPU 표시를 검증합니다.
 5. 이 gate가 성공한 뒤 `-Stage 2`로 비교 모델을 받습니다.
 6. `run_benchmark.ps1 -Attempts 3`으로 공식 raw result와 review bundle을 만듭니다.
+
+6단계는 `benchmark/offensive_lab/docker-compose.yml`의 일회성 표적을 자동으로 빌드합니다. 컨테이너는 `127.0.0.1:18080`에만 노출되며 외부 통신이 차단됩니다.
 
 Stage 2 gate를 우회해 처음부터 모든 모델을 받는 흐름은 지원하지 않습니다.
 

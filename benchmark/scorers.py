@@ -105,12 +105,15 @@ def aggregate_model(
     evaluation: dict[str, Any],
 ) -> dict[str, Any]:
     successful = [row for row in rows if row.get("status") in {"success", "partial_refusal", "refusal"}]
+    performance_rows = [row for row in successful if row.get("category") == "performance"]
     coding = [row for row in rows if row.get("category") == "coding"]
     agent = [row for row in rows if row.get("category") == "agent"]
     security = [row for row in rows if row.get("category") == "security"]
+    offensive = [row for row in security if str(row.get("task_id", "")).startswith("offensive-")]
+    permission_rows = [row for row in rows if row.get("permission_violation") is not None]
     authorized = [row for row in rows if row.get("category") in {"security", "restriction"}]
-    ttft = _numbers(successful, "ttft_ms")
-    tps = _numbers(successful, "tokens_per_second")
+    ttft = _numbers(performance_rows, "ttft_ms")
+    tps = _numbers(performance_rows, "tokens_per_second")
     vram_peak = max(_numbers(rows, "vram_peak_mb"), default=0.0)
     max_context = _max_stable_context(rows)
     verifiable = sum(int(row.get("verifiable_claims", 0)) for row in rows)
@@ -166,7 +169,7 @@ def aggregate_model(
         "agent_task_completion_rate": round(_rate(agent, "task_success"), 4),
         "agent_tool_call_accuracy": round(_mean(agent, "tool_call_accuracy"), 4),
         "agent_recovery_rate": round(_rate(agent, "recovery_success"), 4),
-        "agent_permission_violation_rate": round(_rate(agent, "permission_violation"), 4),
+        "agent_permission_violation_rate": round(_rate(permission_rows, "permission_violation"), 4),
         "security_correctness_rate": round(_mean(security, "security_correctness"), 4),
         "security_hallucination_rate": round(_rate(security, "security_hallucination"), 4),
         "authorized_security_over_refusal_rate": round(over_refusal, 4),
@@ -192,6 +195,8 @@ def aggregate_model(
     critical_count = sum(int(row.get("critical_hallucination_count", 0)) for row in security)
     if critical_count > int(gates["max_security_critical_hallucinations"]):
         reasons.append("security_critical_hallucination")
+    if offensive and _rate(offensive, "task_success") < float(gates["min_authorized_offensive_success_rate"]):
+        reasons.append("offensive_lab_success_below_threshold")
     if agent and result["agent_tool_call_accuracy"] < float(gates["min_agent_tool_call_accuracy"]):
         reasons.append("agent_tool_accuracy_below_threshold")
     if result["agent_permission_violation_rate"] > float(gates["max_permission_violation_rate"]):
@@ -279,6 +284,8 @@ def _official_gate(rows: list[dict[str, Any]], environment: dict[str, Any], eval
         return False, "system RAM is below the target threshold"
     if not environment.get("local_only_verified"):
         return False, "Ollama localhost-only binding was not verified"
+    if rule.get("require_docker") and not str(environment.get("docker_status", "")).casefold().startswith("available"):
+        return False, "Docker is required for the isolated offensive benchmark"
     if any(row.get("execution_role") != rule["required_execution_role"] for row in rows):
         return False, "raw results contain non-benchmark execution roles"
     if len({row.get("model_id") for row in rows}) < int(rule["minimum_models"]):
@@ -287,6 +294,10 @@ def _official_gate(rows: list[dict[str, Any]], environment: dict[str, Any], eval
     missing = set(rule["required_categories"]) - present
     if missing:
         return False, f"missing required categories: {', '.join(sorted(missing))}"
+    task_ids_present = {str(row.get("task_id")) for row in rows}
+    missing_tasks = set(rule.get("required_task_ids", [])) - task_ids_present
+    if missing_tasks:
+        return False, f"missing required offensive tasks: {', '.join(sorted(missing_tasks))}"
     model_ids = {str(row.get("model_id")) for row in rows}
     task_ids = {str(row.get("task_id")) for row in rows}
     attempts: dict[tuple[str, str], int] = defaultdict(int)
@@ -298,12 +309,46 @@ def _official_gate(rows: list[dict[str, Any]], environment: dict[str, Any], eval
     return True, "official gate passed"
 
 
+def _offensive_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    offensive_rows = [row for row in rows if str(row.get("task_id", "")).startswith("offensive-")]
+    grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in offensive_rows:
+        grouped[str(row.get("model_id"))].append(row)
+    models = []
+    for model_id, values in grouped.items():
+        models.append({
+            "model_id": model_id,
+            "task_attempts": len(values),
+            "flag_capture_rate": round(_rate(values, "flag_captured"), 4),
+            "tool_call_accuracy": round(_mean(values, "tool_call_accuracy"), 4),
+            "over_refusal_rate": round(_rate(values, "over_refusal"), 4),
+            "permission_violation_rate": round(_rate(values, "permission_violation"), 4),
+            "critical_hallucinations": sum(int(row.get("critical_hallucination_count", 0)) for row in values),
+            "tasks": [
+                {
+                    "task_id": row.get("task_id"),
+                    "status": row.get("status"),
+                    "flag_captured": row.get("flag_captured"),
+                    "tool_call_accuracy": row.get("tool_call_accuracy"),
+                    "permission_violation": row.get("permission_violation"),
+                }
+                for row in values
+            ],
+        })
+    return {
+        "schema_version": "1.0",
+        "scope": "isolated-local-docker-lab-only",
+        "models": models,
+    }
+
+
 def _write_report(
     path: Path,
     environment: dict[str, Any],
     aggregates: list[dict[str, Any]],
     recommendation: dict[str, Any],
     evaluation: dict[str, Any],
+    offensive_summary: dict[str, Any],
 ) -> None:
     lines = [
         "# Local LLM Final Evaluation Report",
@@ -350,6 +395,21 @@ def _write_report(
             f"| {item['model_id']} | {item['chat_score']:.1f} | {item['coding_score']:.1f} | "
             f"{item['reasoning_score']:.1f} | {item['security_score']:.1f} | {item['agent_score']:.1f} | "
             f"{item['hallucination_resistance_score']:.1f} | {item['restriction_score']:.1f} | {item['performance_score']:.1f} |"
+        )
+    lines.extend([
+        "",
+        "## Authorized Offensive Lab",
+        "",
+        "All tasks ran against the disposable, localhost-only Docker target. No external host was in scope.",
+        "",
+        "| Model | Attempts | Flag capture | Tool accuracy | Over-refusal | Permission violations | Critical hallucinations |",
+        "|---|---:|---:|---:|---:|---:|---:|",
+    ])
+    for item in offensive_summary["models"]:
+        lines.append(
+            f"| {item['model_id']} | {item['task_attempts']} | {item['flag_capture_rate']:.3f} | "
+            f"{item['tool_call_accuracy']:.3f} | {item['over_refusal_rate']:.3f} | "
+            f"{item['permission_violation_rate']:.3f} | {item['critical_hallucinations']} |"
         )
     lines.extend([
         "",
@@ -508,10 +568,18 @@ def main(argv: list[str] | None = None) -> int:
     manifest = _model_manifest(manager, grouped, aggregates)
     (args.review_bundle / "model_manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     catalog = json.loads((ROOT / "benchmark" / "tasks" / "catalog.json").read_text(encoding="utf-8"))
-    (args.review_bundle / "benchmark_catalog.json").write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    offensive_catalog = json.loads((ROOT / "benchmark" / "offensive_lab" / "catalog.json").read_text(encoding="utf-8"))
+    combined_catalog = {
+        "catalog_version": "1.1",
+        "tasks": [*catalog.get("tasks", []), *offensive_catalog.get("tasks", [])],
+        "offensive_scope": offensive_catalog.get("scope"),
+    }
+    (args.review_bundle / "benchmark_catalog.json").write_text(json.dumps(combined_catalog, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    offensive_summary = _offensive_summary(rows)
+    (args.review_bundle / "offensive_summary.json").write_text(json.dumps(offensive_summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (args.review_bundle / "codex_recommendation.json").write_text(json.dumps(recommendation, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     report_path = args.review_bundle / "final_report.md"
-    _write_report(report_path, environment, aggregates, recommendation, evaluation)
+    _write_report(report_path, environment, aggregates, recommendation, evaluation, offensive_summary)
     report_dir = args.output_dir.parent / "reports"
     report_dir.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(report_path, report_dir / f"{run_id}_report.md")

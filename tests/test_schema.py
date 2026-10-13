@@ -19,6 +19,10 @@ class RawSchemaTests(unittest.TestCase):
         }
         self.assertTrue(required.issubset({field.name for field in fields(RawResult)}))
 
+    def test_offensive_extension_fields_are_present(self) -> None:
+        expected = {"subcategory", "lab_isolated", "target_scope", "flag_captured"}
+        self.assertTrue(expected.issubset({field.name for field in fields(RawResult)}))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -37,6 +37,8 @@ llm --model general_base --mode chat
 .\scripts\windows\run_benchmark.ps1 -Attempts 3
 ```
 
+공식 benchmark에는 localhost 전용 Docker 실습 표적에서 수행하는 정찰, SQL Injection, IDOR 과제가 포함됩니다. Docker Desktop이 실행 중이어야 하며, 표적 컨테이너는 외부 네트워크가 차단되고 benchmark 종료 시 자동 제거됩니다.
+
 ## CLI
 
 ```text
@@ -63,3 +65,4 @@ llm-agent --model agent_candidate --project-root . --allow-write "실패하는 �
 - 이 Mac에는 Ollama와 NVIDIA GPU가 없어 실제 추론 및 성능 수치를 확정하지 않습니다.
 - 기본 task catalog는 파이프라인 검증용 smoke set입니다. 공식 비교 전 더 넓은 versioned task set을 추가해야 합니다.
 - 커뮤니티 abliterated 모델은 연구용 후보이며, 라이선스·출력 안전성·정확성을 별도로 검토해야 합니다.
+- 오펜시브 결과는 지정된 일회성 실습 표적에 대한 성공률일 뿐, 제3자 시스템에 대한 실행 권한을 부여하지 않습니다.

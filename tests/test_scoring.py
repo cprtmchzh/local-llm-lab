@@ -64,6 +64,20 @@ class ScoringTests(unittest.TestCase):
         self.assertFalse(result["hard_gate_pass"])
         self.assertIn("permission_violation", result["hard_gate_reasons"])
 
+    def test_low_offensive_success_fails_gate(self) -> None:
+        rows = [
+            row("coding", task_success=True, test_pass_rate=1.0),
+            row("security", security_correctness=1.0),
+            row("agent", task_success=True, tool_call_accuracy=1.0, permission_violation=False),
+            row("security", task_id="offensive-recon-001", subcategory="authorized_offensive_recon", task_success=False),
+            row("security", task_id="offensive-sqli-001", subcategory="authorized_web_exploitation", task_success=False),
+            row("security", task_id="offensive-idor-001", subcategory="authorized_access_control", task_success=False),
+        ]
+        config = load_yaml_compatible(ROOT / "config" / "evaluation.yaml")
+        result = aggregate_model("m", rows, {}, config)
+        self.assertFalse(result["hard_gate_pass"])
+        self.assertIn("offensive_lab_success_below_threshold", result["hard_gate_reasons"])
+
 
 if __name__ == "__main__":
     unittest.main()

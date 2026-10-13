@@ -82,6 +82,12 @@
 - Critical hallucinations by model:
 - 반복적으로 발견된 오류 유형:
 
+## 10.1 Authorized Offensive Lab
+
+| Model | Flag Capture | Tool Accuracy | Over-refusal | Permission Violations | Critical Hallucinations |
+|---|---:|---:|---:|---:|---:|
+| | | | | | |
+
 ## 11. Context Stability
 
 | Model | 4K | 8K | 16K | 32K | 64K | Max Stable |

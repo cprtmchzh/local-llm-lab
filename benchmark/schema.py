@@ -26,6 +26,10 @@ class RawResult:
     task_version: str
     context_length: int
     temperature: float
+    subcategory: str = ""
+    lab_isolated: bool = False
+    target_scope: str = ""
+    flag_captured: bool | None = None
     status: str = "failure"
     response_text: str = ""
     response_saved: bool = False

@@ -3,10 +3,40 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from benchmark.scorers import main
+from benchmark.scorers import _official_gate, main
+from cli.config import ROOT, load_yaml_compatible
 
 
 class ReviewBundleTests(unittest.TestCase):
+    def test_official_gate_requires_offensive_tasks(self) -> None:
+        categories = ["chat", "coding", "reasoning", "security", "agent", "restriction", "hallucination", "performance"]
+        rows = []
+        for model_id in ("m1", "m2", "m3"):
+            for category in categories:
+                for attempt in range(3):
+                    rows.append({
+                        "model_id": model_id,
+                        "task_id": f"{category}-001",
+                        "category": category,
+                        "execution_role": "benchmark",
+                        "attempt_id": f"{model_id}-{category}-{attempt}",
+                    })
+        environment = {
+            "official_benchmark_eligible": True,
+            "execution_role": "benchmark",
+            "os": "Windows",
+            "cpu": "AMD Ryzen 7 7800X3D",
+            "gpu": "NVIDIA RTX 5070 Ti",
+            "vram_mb": 16384,
+            "ram_gb": 32,
+            "local_only_verified": True,
+            "docker_status": "available: test",
+        }
+        config = load_yaml_compatible(ROOT / "config" / "evaluation.yaml")
+        passed, reason = _official_gate(rows, environment, config)
+        self.assertFalse(passed)
+        self.assertIn("missing required offensive tasks", reason)
+
     def test_development_results_do_not_create_final_recommendation(self) -> None:
         categories = ["chat", "coding", "reasoning", "security", "agent", "restriction", "hallucination", "performance"]
         with tempfile.TemporaryDirectory() as directory:
@@ -42,6 +72,9 @@ class ReviewBundleTests(unittest.TestCase):
             self.assertIsNone(recommendation["best_overall"]["model_id"])
             self.assertTrue((review / "aggregate_scores.csv").exists())
             self.assertTrue((review / "final_report.md").exists())
+            schema = json.loads((Path(__file__).resolve().parents[1] / "docs" / "schemas" / "REVIEW_OUTPUT_SCHEMA.json").read_text(encoding="utf-8"))
+            for filename in schema["required_files"]:
+                self.assertTrue((review / filename).exists(), filename)
 
 
 if __name__ == "__main__":

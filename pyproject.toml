@@ -14,10 +14,14 @@ dependencies = []
 llm = "cli.main:main"
 llm-agent = "agent.coding_agent:main"
 llm-benchmark = "benchmark.runner:main"
+llm-offensive-benchmark = "benchmark.offensive_runner:main"
 llm-score = "benchmark.scorers:main"
 
 [tool.setuptools]
-packages = ["cli", "agent", "benchmark"]
+packages = ["cli", "agent", "benchmark", "benchmark.offensive_lab"]
+
+[tool.setuptools.package-data]
+"benchmark.offensive_lab" = ["catalog.json", "docker-compose.yml", "Dockerfile"]
 
 [tool.unittest]
 start-directory = "tests"

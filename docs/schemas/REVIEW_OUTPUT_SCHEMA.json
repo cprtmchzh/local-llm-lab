@@ -9,6 +9,7 @@
     "raw_results.jsonl",
     "aggregate_scores.json",
     "aggregate_scores.csv",
+    "offensive_summary.json",
     "codex_recommendation.json",
     "final_report.md"
   ],
