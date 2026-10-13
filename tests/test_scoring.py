@@ -1,7 +1,9 @@
 import json
+import tempfile
 import unittest
+from pathlib import Path
 
-from benchmark.scorers import REQUIRED_FIELDS, aggregate_model
+from benchmark.scorers import REQUIRED_FIELDS, aggregate_model, load_rows
 from cli.config import ROOT, load_yaml_compatible
 
 
@@ -30,6 +32,13 @@ def row(category: str, **values):
 
 
 class ScoringTests(unittest.TestCase):
+    def test_load_rows_accepts_utf8_bom(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            raw = Path(directory) / "raw.jsonl"
+            raw.write_text(json.dumps({"model_id": "m"}) + "\n", encoding="utf-8-sig")
+
+            self.assertEqual(load_rows([raw]), [{"model_id": "m"}])
+
     def test_full_scores_and_stable_context(self) -> None:
         rows = [
             row("chat"),

@@ -209,7 +209,10 @@ def aggregate_model(
 def load_rows(paths: list[Path]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for path in paths:
-        with path.open(encoding="utf-8") as handle:
+        # Windows PowerShell commonly writes UTF-8 files with a BOM.  The
+        # utf-8-sig codec accepts those files while behaving like utf-8 when
+        # no BOM is present.
+        with path.open(encoding="utf-8-sig") as handle:
             for line_number, line in enumerate(handle, 1):
                 if not line.strip():
                     continue
