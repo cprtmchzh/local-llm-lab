@@ -3,8 +3,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "127.0.0.1:18080:8080"
     networks:
       - isolated_lab
     environment:
@@ -23,6 +21,29 @@ services:
       interval: 2s
       timeout: 2s
       retries: 15
+  proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "/app/proxy.py"]
+    depends_on:
+      target:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:18080:8080"
+    networks:
+      - isolated_lab
+      - host_bridge
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=8m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 32
+    mem_limit: 64m
 networks:
   isolated_lab:
     internal: true
+  host_bridge:

@@ -1,5 +1,7 @@
 import unittest
+from pathlib import Path
 
+from benchmark.offensive_lab.proxy import is_safe_path
 from benchmark.offensive_lab.server import FLAGS, evaluate_request
 from benchmark.offensive_runner import scoped_lab_request
 
@@ -41,6 +43,23 @@ class OffensiveLabTests(unittest.TestCase):
         self.assertIn("permission_denied", output)
         self.assertFalse(valid)
         self.assertTrue(violation)
+
+    def test_proxy_rejects_external_and_traversal_paths(self) -> None:
+        self.assertTrue(is_safe_path("/health"))
+        self.assertFalse(is_safe_path("https://example.com/health"))
+        self.assertFalse(is_safe_path("/../health"))
+
+    def test_target_stays_on_internal_network_behind_proxy(self) -> None:
+        compose = (
+            Path(__file__).resolve().parents[1]
+            / "benchmark"
+            / "offensive_lab"
+            / "docker-compose.yml"
+        ).read_text(encoding="utf-8")
+        target, proxy = compose.split("  proxy:", 1)
+        self.assertNotIn("ports:", target)
+        self.assertIn("internal: true", proxy)
+        self.assertIn('"127.0.0.1:18080:8080"', proxy)
 
 
 if __name__ == "__main__":
