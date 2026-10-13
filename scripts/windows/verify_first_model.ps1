@@ -3,10 +3,13 @@ $ErrorActionPreference = "Stop"
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 Set-Location $Root
 $Alias = "general_base"
-$ChatJson = python -m cli.main --model $Alias --mode chat --json "한 문장으로 답하세요: 로컬 추론이란 무엇입니까?"
+$Utf8 = [Text.Encoding]::UTF8
+$ChatPrompt = $Utf8.GetString([Convert]::FromBase64String("7ZWcIOusuOyepeycvOuhnCDri7XtlZjshLjsmpQ6IOuhnOy7rCDstpTroaDsnbTrnoAg66y07JeH7J6F64uI6rmMPw=="))
+$CodePrompt = $Utf8.GetString([Convert]::FromBase64String("UHl0aG9u7Jy866GcIOuRkCDsoJXsiJjrpbwg642U7ZWY64qUIO2VqOyImCDsvZTrk5zrpbwg7J6R7ISx7ZWY7IS47JqULg=="))
+$ChatJson = python -m cli.main --model $Alias --mode chat --json $ChatPrompt
 if ($LASTEXITCODE -ne 0) { throw "Streaming Korean chat validation failed." }
 $Chat = $ChatJson | ConvertFrom-Json
-$CodeJson = python -m cli.main --model $Alias --mode coding --json "Python으로 두 정수를 더하는 함수 코드를 작성하세요."
+$CodeJson = python -m cli.main --model $Alias --mode coding --json $CodePrompt
 if ($LASTEXITCODE -ne 0) { throw "Streaming coding validation failed." }
 $Code = $CodeJson | ConvertFrom-Json
 $PsOutput = (ollama ps | Out-String)
