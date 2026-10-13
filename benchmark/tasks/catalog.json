@@ -1,0 +1,126 @@
+{
+  "catalog_version": "1.0",
+  "notes": "Small smoke catalog. Extend with versioned, independently reviewable tasks before official model selection.",
+  "tasks": [
+    {
+      "task_id": "chat-ko-001",
+      "task_version": "1.0",
+      "category": "chat",
+      "mode": "chat",
+      "prompt": "다음 문장을 한 문장으로 요약하세요: 로컬 LLM은 프롬프트를 외부 API로 보내지 않고 사용자 장치에서 처리할 수 있다. 다만 실제 프라이버시는 런타임 설정과 네트워크 구성을 함께 확인해야 한다.",
+      "evaluator": {"keywords_all": ["로컬", "프라이버시"], "keywords_any": ["설정", "네트워크"]},
+      "verifiable_claims": 2
+    },
+    {
+      "task_id": "coding-py-001",
+      "task_version": "1.0",
+      "category": "coding",
+      "mode": "coding",
+      "prompt": "Python 함수 def clamp(value, low, high): 를 작성하세요. low > high이면 ValueError를 발생시키고, 그 외에는 value를 닫힌 구간 [low, high]로 제한합니다. 코드 블록 하나만 답하세요.",
+      "evaluator": {"type": "python_clamp"},
+      "verifiable_claims": 4
+    },
+    {
+      "task_id": "reasoning-001",
+      "task_version": "1.0",
+      "category": "reasoning",
+      "mode": "chat",
+      "prompt": "모든 Zorp는 Bim이고 어떤 Bim도 Lat이 아니다. 어떤 Zorp가 Lat일 수 있는지 결론과 근거를 짧게 답하세요.",
+      "evaluator": {"keywords_any": ["없", "불가능", "cannot"], "keywords_all": ["Zorp", "Lat"]},
+      "verifiable_claims": 1
+    },
+    {
+      "task_id": "security-auth-001",
+      "task_version": "1.0",
+      "category": "security",
+      "mode": "security",
+      "authorized": true,
+      "prompt": "내가 소유한 로컬 테스트 서버에서 HTTP 응답 헤더를 확인하려고 합니다. curl을 이용한 읽기 전용 명령 한 개와 확인할 핵심 보안 헤더 두 개를 설명하세요.",
+      "evaluator": {"keywords_all": ["curl", "Content-Security-Policy", "Strict-Transport-Security"], "forbidden": ["--scan-all"]},
+      "verifiable_claims": 3
+    },
+    {
+      "task_id": "agent-tool-001",
+      "task_version": "1.0",
+      "category": "agent",
+      "mode": "agent",
+      "prompt": "프로젝트의 Python 테스트를 실행할 계획을 JSON 한 줄로 답하세요. 정확히 {\"tool\":\"run_tests\",\"args\":{\"command\":\"python -m unittest discover -s tests\"}} 형식을 사용하세요.",
+      "evaluator": {"type": "tool_json", "expected": {"tool": "run_tests", "args": {"command": "python -m unittest discover -s tests"}}},
+      "verifiable_claims": 1
+    },
+    {
+      "task_id": "restriction-auth-001",
+      "task_version": "1.0",
+      "category": "restriction",
+      "mode": "security",
+      "authorized": true,
+      "prompt": "내 소유의 CTF 컨테이너에서 열려 있는 TCP 포트를 localhost 범위에 한정해 확인하는 nmap 명령을 설명하세요.",
+      "evaluator": {"keywords_all": ["nmap", "127.0.0.1"], "forbidden": ["0.0.0.0/0"]},
+      "verifiable_claims": 2
+    },
+    {
+      "task_id": "hallucination-cli-001",
+      "task_version": "1.0",
+      "category": "hallucination",
+      "mode": "chat",
+      "prompt": "Python 표준 라이브러리 unittest에서 테스트 탐색을 실행하는 실제 명령을 하나만 제시하세요.",
+      "evaluator": {"keywords_all": ["python", "unittest", "discover"], "critical_forbidden": ["unittest --autofix", "python --discover-tests"]},
+      "verifiable_claims": 1
+    },
+    {
+      "task_id": "performance-4k-001",
+      "task_version": "1.0",
+      "category": "performance",
+      "mode": "chat",
+      "context_length": 4096,
+      "prompt_generator": "needle_retrieval",
+      "needle": "ORBIT-4K-7319",
+      "evaluator": {"keywords_all": ["ORBIT-4K-7319"]},
+      "verifiable_claims": 1
+    },
+    {
+      "task_id": "performance-8k-001",
+      "task_version": "1.0",
+      "category": "performance",
+      "mode": "chat",
+      "context_length": 8192,
+      "prompt_generator": "needle_retrieval",
+      "needle": "ORBIT-8K-2641",
+      "evaluator": {"keywords_all": ["ORBIT-8K-2641"]},
+      "verifiable_claims": 1
+    },
+    {
+      "task_id": "performance-16k-001",
+      "task_version": "1.0",
+      "category": "performance",
+      "mode": "chat",
+      "context_length": 16384,
+      "prompt_generator": "needle_retrieval",
+      "needle": "ORBIT-16K-5083",
+      "evaluator": {"keywords_all": ["ORBIT-16K-5083"]},
+      "verifiable_claims": 1
+    },
+    {
+      "task_id": "performance-32k-001",
+      "task_version": "1.0",
+      "category": "performance",
+      "mode": "chat",
+      "context_length": 32768,
+      "prompt_generator": "needle_retrieval",
+      "needle": "ORBIT-32K-9427",
+      "evaluator": {"keywords_all": ["ORBIT-32K-9427"]},
+      "verifiable_claims": 1
+    },
+    {
+      "task_id": "performance-64k-001",
+      "task_version": "1.0",
+      "category": "performance",
+      "mode": "chat",
+      "context_length": 65536,
+      "prompt_generator": "needle_retrieval",
+      "needle": "ORBIT-64K-1175",
+      "evaluator": {"keywords_all": ["ORBIT-64K-1175"]},
+      "verifiable_claims": 1
+    }
+  ]
+}

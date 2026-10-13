@@ -1,0 +1,58 @@
+{
+  "registry_checked_at": "2026-10-13",
+  "pull_order": ["general_base", "low_restriction", "reasoning_security", "agent_candidate"],
+  "models": {
+    "general_base": {
+      "provider": "ollama-library",
+      "runtime_name": "qwen3:8b",
+      "family": "Qwen3",
+      "parameter_class": "8.19B",
+      "quantization": "Q4_K_M",
+      "estimated_disk_gb": 5.2,
+      "roles": ["chat", "coding", "baseline"],
+      "source": "https://ollama.com/library/qwen3:8b",
+      "license": "Apache-2.0",
+      "stage": 1,
+      "notes": "First model; validate GPU inference before pulling later stages."
+    },
+    "low_restriction": {
+      "provider": "ollama-community",
+      "runtime_name": "huihui_ai/qwen3-abliterated:8b",
+      "family": "Qwen3 abliterated",
+      "parameter_class": "8B",
+      "quantization": "Q4_K_M",
+      "estimated_disk_gb": 5.0,
+      "roles": ["security", "over-refusal-comparison"],
+      "source": "https://ollama.com/huihui_ai/qwen3-abliterated",
+      "license": "upstream Apache-2.0; verify derivative terms",
+      "stage": 2,
+      "notes": "Research-only community derivative; compare directly with general_base and review outputs."
+    },
+    "reasoning_security": {
+      "provider": "ollama-library",
+      "runtime_name": "deepseek-r1:8b",
+      "family": "DeepSeek-R1-0528-Qwen3",
+      "parameter_class": "8.19B",
+      "quantization": "Q4_K_M",
+      "estimated_disk_gb": 5.2,
+      "roles": ["reasoning", "security"],
+      "source": "https://ollama.com/library/deepseek-r1:8b",
+      "license": "MIT and upstream Qwen terms",
+      "stage": 2,
+      "notes": "Reasoning candidate; benchmark rather than assume superiority."
+    },
+    "agent_candidate": {
+      "provider": "ollama-library",
+      "runtime_name": "gpt-oss:20b",
+      "family": "gpt-oss",
+      "parameter_class": "20.9B MoE",
+      "quantization": "MXFP4",
+      "estimated_disk_gb": 14.0,
+      "roles": ["agent", "coding", "reasoning"],
+      "source": "https://ollama.com/library/gpt-oss:20b",
+      "license": "Apache-2.0",
+      "stage": 2,
+      "notes": "Pull only after the stage-1 GPU gate passes; 16 GB systems require empirical validation."
+    }
+  }
+}

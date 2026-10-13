@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-10-12T21:35:03.654135+00:00",
+  "execution_role": "development",
+  "official_benchmark_eligible": false,
+  "os": "Darwin",
+  "os_version": "27.2",
+  "cpu": "Apple M2",
+  "ram_gb": 16.0,
+  "gpu": "not measured; Windows NVIDIA target required",
+  "vram_mb": null,
+  "driver_version": null,
+  "python_version": "3.14.7",
+  "git_version": "git version 2.45.2",
+  "ollama_version": null,
+  "wsl_status": "not_applicable",
+  "docker_status": "Docker version 29.3.0, build 5927d80",
+  "free_disk_gb": 67.9,
+  "ollama_port_11434_open": false,
+  "local_only_verified": false,
+  "notes": [
+    "Mac development snapshot; never use these performance values for final model selection."
+  ]
+}

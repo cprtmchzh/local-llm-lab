@@ -1,0 +1,14 @@
+{
+  "base_url": "http://127.0.0.1:11434",
+  "timeout_seconds": 300,
+  "default_model": "general_base",
+  "default_mode": "chat",
+  "default_context": 8192,
+  "temperature": 0.2,
+  "show_stats": true,
+  "privacy": {
+    "local_only": true,
+    "save_responses": false,
+    "allow_cloud_models": false
+  }
+}
