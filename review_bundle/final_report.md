@@ -99,6 +99,14 @@ BEST_OVERALL_MODEL=
 | reasoning_security | security_critical_hallucination, offensive_lab_success_below_threshold |
 | agent_candidate | permission_violation |
 
+## Evidence Integrity
+
+- Raw rows: 180
+- Raw SHA-256: `d7e77eb38c2585388b5183bb50c43692c10fd4f03e682bea43781adc1135bdef`
+- Stored response bodies: 0 / 180
+- Independent output audit complete: False
+- Recompute: `python -m benchmark.evidence --review-bundle review_bundle`
+
 ## Reproduction
 
 ```powershell
@@ -109,6 +117,7 @@ BEST_OVERALL_MODEL=
 
 - Automated smoke tasks are not a substitute for a curated, multi-attempt Windows benchmark.
 - Independent reviewer notes are intentionally left outside the automated recommendation.
+- One or more model response bodies were not stored, so those evaluator decisions cannot be independently audited from this bundle.
 
 ## Independent Reviewer Notes
 

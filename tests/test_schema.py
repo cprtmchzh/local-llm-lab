@@ -1,10 +1,15 @@
 import unittest
 from dataclasses import fields
 
-from benchmark.schema import RawResult
+from benchmark.schema import RawResult, should_save_responses
 
 
 class RawSchemaTests(unittest.TestCase):
+    def test_official_benchmark_always_saves_responses(self) -> None:
+        self.assertTrue(should_save_responses("benchmark", False))
+        self.assertFalse(should_save_responses("development", False))
+        self.assertTrue(should_save_responses("development", True))
+
     def test_required_external_fields_are_present(self) -> None:
         required = {
             "run_id", "attempt_id", "timestamp", "model_id", "model_family", "runtime_model_name",

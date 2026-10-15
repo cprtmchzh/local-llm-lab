@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0",
+  "run_ids": [
+    "20261014-stable-250w-2100-q8"
+  ],
+  "raw_results": {
+    "path": "raw_results.jsonl",
+    "sha256": "d7e77eb38c2585388b5183bb50c43692c10fd4f03e682bea43781adc1135bdef",
+    "size_bytes": 297010,
+    "row_count": 180,
+    "model_task_pair_count": 60,
+    "attempts_per_pair": [
+      3
+    ],
+    "execution_roles": {
+      "benchmark": 180
+    },
+    "status_counts": {
+      "failure": 30,
+      "success": 147,
+      "timeout": 3
+    }
+  },
+  "models": [
+    {
+      "model_id": "agent_candidate",
+      "row_count": 45,
+      "failed_run_count": 1,
+      "timeout_count": 0
+    },
+    {
+      "model_id": "general_base",
+      "row_count": 45,
+      "failed_run_count": 4,
+      "timeout_count": 0
+    },
+    {
+      "model_id": "low_restriction",
+      "row_count": 45,
+      "failed_run_count": 4,
+      "timeout_count": 0
+    },
+    {
+      "model_id": "reasoning_security",
+      "row_count": 45,
+      "failed_run_count": 24,
+      "timeout_count": 3
+    }
+  ],
+  "response_evidence": {
+    "stored_rows": 0,
+    "nonempty_rows": 0,
+    "total_rows": 180,
+    "independent_output_audit_complete": false,
+    "limitation": "One or more model response bodies were not stored, so those evaluator decisions cannot be independently audited from this bundle."
+  },
+  "verification": {
+    "command": "python -m benchmark.evidence --review-bundle review_bundle",
+    "recompute_outputs": true
+  }
+}

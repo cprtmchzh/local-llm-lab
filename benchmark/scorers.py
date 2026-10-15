@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import math
 import shutil
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from statistics import mean
@@ -345,6 +346,70 @@ def _offensive_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _evidence_manifest(rows: list[dict[str, Any]], raw_path: Path) -> dict[str, Any]:
+    pair_counts = Counter((str(row.get("model_id")), str(row.get("task_id"))) for row in rows)
+    status_counts = Counter(str(row.get("status")) for row in rows)
+    role_counts = Counter(str(row.get("execution_role")) for row in rows)
+    stored_responses = sum(bool(row.get("response_saved")) for row in rows)
+    nonempty_responses = sum(bool(str(row.get("response_text") or "")) for row in rows)
+    model_rows: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        model_rows[str(row.get("model_id"))].append(row)
+
+    response_audit_complete = bool(rows) and stored_responses == len(rows) and nonempty_responses == len(rows)
+    limitation = None
+    if not response_audit_complete:
+        limitation = (
+            "One or more model response bodies were not stored, so those evaluator decisions "
+            "cannot be independently audited from this bundle."
+        )
+
+    return {
+        "schema_version": "1.0",
+        "run_ids": sorted({str(row.get("run_id")) for row in rows}),
+        "raw_results": {
+            "path": raw_path.name,
+            "sha256": _file_sha256(raw_path),
+            "size_bytes": raw_path.stat().st_size,
+            "row_count": len(rows),
+            "model_task_pair_count": len(pair_counts),
+            "attempts_per_pair": sorted(set(pair_counts.values())),
+            "execution_roles": dict(sorted(role_counts.items())),
+            "status_counts": dict(sorted(status_counts.items())),
+        },
+        "models": [
+            {
+                "model_id": model_id,
+                "row_count": len(values),
+                "failed_run_count": sum(
+                    row.get("status") in {"failure", "timeout", "oom", "tool_error"} for row in values
+                ),
+                "timeout_count": sum(row.get("status") == "timeout" for row in values),
+            }
+            for model_id, values in sorted(model_rows.items())
+        ],
+        "response_evidence": {
+            "stored_rows": stored_responses,
+            "nonempty_rows": nonempty_responses,
+            "total_rows": len(rows),
+            "independent_output_audit_complete": response_audit_complete,
+            "limitation": limitation,
+        },
+        "verification": {
+            "command": "python -m benchmark.evidence --review-bundle review_bundle",
+            "recompute_outputs": True,
+        },
+    }
+
+
 def _write_report(
     path: Path,
     environment: dict[str, Any],
@@ -352,6 +417,7 @@ def _write_report(
     recommendation: dict[str, Any],
     evaluation: dict[str, Any],
     offensive_summary: dict[str, Any],
+    evidence_manifest: dict[str, Any],
 ) -> None:
     lines = [
         "# Local LLM Final Evaluation Report",
@@ -361,7 +427,7 @@ def _write_report(
         "## Test Environment",
         "",
         f"- OS: {environment.get('os', 'unknown')}",
-        f"- CPU: {environment.get('cpu', 'unknown')}",
+        f"- CPU: {str(environment.get('cpu', 'unknown')).strip()}",
         f"- GPU: {environment.get('gpu', 'not measured')}",
         f"- VRAM: {environment.get('vram_mb', 'not measured')} MB",
         f"- RAM: {environment.get('ram_gb', 'not measured')} GB",
@@ -470,6 +536,14 @@ def _write_report(
         lines.extend(f"| {item['model_id']} | {item['reason']} |" for item in recommendation["rejected_candidates"])
     lines.extend([
         "",
+        "## Evidence Integrity",
+        "",
+        f"- Raw rows: {evidence_manifest['raw_results']['row_count']}",
+        f"- Raw SHA-256: `{evidence_manifest['raw_results']['sha256']}`",
+        f"- Stored response bodies: {evidence_manifest['response_evidence']['stored_rows']} / {evidence_manifest['response_evidence']['total_rows']}",
+        f"- Independent output audit complete: {evidence_manifest['response_evidence']['independent_output_audit_complete']}",
+        f"- Recompute: `{evidence_manifest['verification']['command']}`",
+        "",
         "## Reproduction",
         "",
         "```powershell",
@@ -480,6 +554,10 @@ def _write_report(
         "",
         "- Automated smoke tasks are not a substitute for a curated, multi-attempt Windows benchmark.",
         "- Independent reviewer notes are intentionally left outside the automated recommendation.",
+    ])
+    if evidence_manifest["response_evidence"]["limitation"]:
+        lines.append(f"- {evidence_manifest['response_evidence']['limitation']}")
+    lines.extend([
         "",
         "## Independent Reviewer Notes",
         "",
@@ -581,8 +659,15 @@ def main(argv: list[str] | None = None) -> int:
     offensive_summary = _offensive_summary(rows)
     (args.review_bundle / "offensive_summary.json").write_text(json.dumps(offensive_summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (args.review_bundle / "codex_recommendation.json").write_text(json.dumps(recommendation, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    raw_bundle_path = args.review_bundle / "raw_results.jsonl"
+    evidence_manifest = _evidence_manifest(rows, raw_bundle_path)
+    (args.review_bundle / "evidence_manifest.json").write_text(
+        json.dumps(evidence_manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     report_path = args.review_bundle / "final_report.md"
-    _write_report(report_path, environment, aggregates, recommendation, evaluation, offensive_summary)
+    _write_report(
+        report_path, environment, aggregates, recommendation, evaluation, offensive_summary, evidence_manifest
+    )
     report_dir = args.output_dir.parent / "reports"
     report_dir.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(report_path, report_dir / f"{run_id}_report.md")

@@ -16,6 +16,7 @@ llm-agent = "agent.coding_agent:main"
 llm-benchmark = "benchmark.runner:main"
 llm-offensive-benchmark = "benchmark.offensive_runner:main"
 llm-score = "benchmark.scorers:main"
+llm-verify-evidence = "benchmark.evidence:main"
 
 [tool.setuptools]
 packages = ["cli", "agent", "benchmark", "benchmark.offensive_lab"]

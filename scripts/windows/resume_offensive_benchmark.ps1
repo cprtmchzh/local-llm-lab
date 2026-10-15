@@ -47,6 +47,8 @@ try {
 
   python -m benchmark.scorers $RawPath
   if ($LASTEXITCODE -ne 0) { throw "Scoring failed." }
+  python -m benchmark.evidence --review-bundle (Join-Path $Root "review_bundle")
+  if ($LASTEXITCODE -ne 0) { throw "Evidence verification failed." }
   Write-Host "TASK_SUCCESS"
 } finally {
   if ($TranscriptStarted) { Stop-Transcript | Out-Null }

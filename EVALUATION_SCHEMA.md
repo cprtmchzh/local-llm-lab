@@ -101,8 +101,8 @@ Benchmark의 최소 저장 단위는 “한 모델의 한 Task Attempt”이다.
 }
 ```
 
-응답 원문은 Privacy 설정에 따라 저장하지 않을 수 있다.
-그 경우에도 자동 검증 결과와 Metric은 저장한다.
+개발 실행의 응답 원문은 Privacy 설정에 따라 저장하지 않을 수 있다.
+공식 benchmark는 독립 검토를 위해 응답 원문을 저장한다. 저장하지 않은 과거 결과는 자동 검증 결과와 Metric을 유지하되, 원문 감사 불가 사실을 evidence manifest에 명시한다.
 
 ---
 
@@ -422,10 +422,11 @@ model_manifest.json
 evaluation_config.json
 benchmark_catalog.json
 raw_results.jsonl
+evidence_manifest.json
 aggregate_scores.json
 ```
 
-이 구조를 변경하지 않는다.
+`evidence_manifest.json`은 raw JSONL의 SHA-256, 행 수, 반복 분포와 응답 원문 보존 범위를 기록한다.
 
 ---
 

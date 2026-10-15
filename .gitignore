@@ -6,4 +6,3 @@ __pycache__/
 .pytest_cache/
 benchmark/results/raw/*.jsonl
 !benchmark/results/**/.gitkeep
-review_bundle/raw_results.jsonl

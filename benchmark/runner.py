@@ -15,7 +15,7 @@ from cli.client import OllamaClient, OllamaError
 from cli.config import ROOT, RuntimeConfig, load_yaml_compatible, prompt_for
 from cli.model_manager import Model, ModelManager
 
-from .schema import RawResult
+from .schema import RawResult, should_save_responses
 from .system_metrics import HardwareSampler
 from .validators import validate_clamp, validate_tool_json
 
@@ -142,6 +142,7 @@ def parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
+    save_responses = should_save_responses(args.execution_role, args.save_responses)
     cfg = RuntimeConfig.load()
     manager = ModelManager()
     catalog = load_yaml_compatible(args.catalog)
@@ -194,8 +195,8 @@ def main(argv: list[str] | None = None) -> int:
                     hardware = sampler.result()
                     result = replace(
                         result,
-                        response_text=chat.text if args.save_responses else "",
-                        response_saved=args.save_responses,
+                        response_text=chat.text if save_responses else "",
+                        response_saved=save_responses,
                         prompt_tokens=chat.stats.prompt_tokens,
                         output_tokens=chat.stats.output_tokens,
                         ttft_ms=chat.stats.ttft_ms,

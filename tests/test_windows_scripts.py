@@ -25,5 +25,11 @@ class WindowsScriptTests(unittest.TestCase):
         self.assertIn(b'Where-Object { $_.task_id -like "offensive-*" }', content)
         self.assertIn(b"Refusing to append duplicates", content)
 
+    def test_benchmark_scripts_verify_the_review_bundle(self) -> None:
+        for name in ("run_benchmark.ps1", "resume_offensive_benchmark.ps1"):
+            content = (ROOT / "scripts" / "windows" / name).read_bytes()
+            self.assertIn(b"python -m benchmark.evidence", content)
+            self.assertIn(b"Evidence verification failed", content)
+
 if __name__ == "__main__":
     unittest.main()

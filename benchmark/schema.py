@@ -7,6 +7,11 @@ from typing import Any
 VALID_STATUSES = {"success", "failure", "timeout", "oom", "refusal", "partial_refusal", "tool_error"}
 
 
+def should_save_responses(execution_role: str, requested: bool) -> bool:
+    """Keep development private by default, but make official evidence auditable."""
+    return requested or execution_role == "benchmark"
+
+
 @dataclass
 class RawResult:
     run_id: str

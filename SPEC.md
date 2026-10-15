@@ -923,6 +923,7 @@ review_bundle/
 ├─ evaluation_config.json
 ├─ benchmark_catalog.json
 ├─ raw_results.jsonl
+├─ evidence_manifest.json
 ├─ aggregate_scores.json
 ├─ aggregate_scores.csv
 ├─ codex_recommendation.json

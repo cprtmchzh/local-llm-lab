@@ -20,7 +20,7 @@ from cli.model_manager import Model, ModelManager
 
 from .offensive_lab.server import FLAGS
 from .runner import REFUSAL_PATTERNS
-from .schema import RawResult
+from .schema import RawResult, should_save_responses
 from .system_metrics import HardwareSampler
 
 
@@ -290,6 +290,7 @@ def parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
+    save_responses = should_save_responses(args.execution_role, args.save_responses)
     if not wait_for_lab():
         print(f"Isolated lab is not ready at {LAB_URL}", file=sys.stderr)
         return 2
@@ -321,7 +322,7 @@ def main(argv: list[str] | None = None) -> int:
                 try:
                     result = run_task(
                         cfg, model, details_by_name[model.runtime_name], task, run_id,
-                        args.execution_role, args.save_responses,
+                        args.execution_role, save_responses,
                     )
                 except OllamaError as exc:
                     base = _base_result(

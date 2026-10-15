@@ -2,7 +2,7 @@
 
 Windows RTX 5070 Ti 시스템에서 Ollama 기반 로컬 LLM을 동일 조건으로 검증하고, 원시 결과에서 역할별 추천을 재계산할 수 있게 하는 CLI와 평가 도구입니다. 개발은 macOS, 공식 모델 실행과 성능 측정은 Windows에서 수행합니다.
 
-현재 상태는 **구현 및 Mac 단위 검증 단계**입니다. Windows 공식 benchmark가 끝나기 전에는 어떤 모델도 최종 추천으로 표시하지 않습니다.
+현재 상태는 **Windows 공식 benchmark 및 재현 검증 완료**입니다. 4개 후보 모두 hard gate를 통과하지 못해 최종 추천 모델은 없습니다.
 
 세부 진행 상태는 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md)에 기록합니다.
 
@@ -46,7 +46,7 @@ llm
 llm --model general_base --mode coding "Python으로 이 함수를 고쳐줘"
 ```
 
-대화형 명령은 `/models`, `/model`, `/mode`, `/system`, `/context`, `/reset`, `/stats`, `/gpu`, `/help`, `/exit`입니다. 런타임 URL은 localhost만 허용하며 응답 원문은 기본적으로 저장하지 않습니다.
+대화형 명령은 `/models`, `/model`, `/mode`, `/system`, `/context`, `/reset`, `/stats`, `/gpu`, `/help`, `/exit`입니다. 런타임 URL은 localhost만 허용합니다. 개발 실행은 응답 원문을 기본적으로 저장하지 않지만, 독립 검토가 필요한 공식 `benchmark` 실행은 응답을 저장합니다.
 
 Repository 범위 coding agent는 쓰기를 명시적으로 허용해야 합니다.
 
@@ -56,13 +56,21 @@ llm-agent --model agent_candidate --project-root . --allow-write "실패하는 �
 
 ## 평가 산출물
 
-공식 실행은 `review_bundle/`에 환경, 모델 manifest, 평가 설정, task catalog, raw JSONL, 집계 JSON/CSV, 별도 추천과 보고서를 만듭니다. `aggregate_scores.*`와 `raw_results.jsonl`에는 추천 문장을 넣지 않습니다.
+공식 실행은 `review_bundle/`에 환경, 모델 manifest, 평가 설정, task catalog, raw JSONL, SHA-256 evidence manifest, 집계 JSON/CSV, 별도 추천과 보고서를 만듭니다. `aggregate_scores.*`와 `raw_results.jsonl`에는 추천 문장을 넣지 않습니다.
+
+원시 데이터에서 집계와 보고서를 다시 만들고 게시된 결과와 비교하려면 다음을 실행합니다.
+
+```bash
+python -m benchmark.evidence --review-bundle review_bundle
+```
+
+GitHub Actions도 모든 push와 pull request에서 단위 테스트와 이 재현 검증을 실행하고 review bundle을 실행 artifact로 보존합니다.
 
 구체적인 설치와 운영은 [installation](docs/installation.md), 점수 계산은 [benchmark methodology](docs/benchmark-methodology.md), 권한 정책은 [security](docs/security.md)를 참고하세요. 원본 요구사항은 [SPEC.md](SPEC.md)와 [EVALUATION_SCHEMA.md](EVALUATION_SCHEMA.md)입니다.
 
 ## 현재 제한
 
-- 이 Mac에는 Ollama와 NVIDIA GPU가 없어 실제 추론 및 성능 수치를 확정하지 않습니다.
+- 현재 게시된 2026-10-14 실행은 응답 본문 저장 정책 적용 전 결과라 개별 자동 판정을 원문과 대조할 수 없습니다. 이후 공식 실행부터 응답 본문을 저장합니다.
 - 기본 task catalog는 파이프라인 검증용 smoke set입니다. 공식 비교 전 더 넓은 versioned task set을 추가해야 합니다.
 - 커뮤니티 abliterated 모델은 연구용 후보이며, 라이선스·출력 안전성·정확성을 별도로 검토해야 합니다.
 - 오펜시브 결과는 지정된 일회성 실습 표적에 대한 성공률일 뿐, 제3자 시스템에 대한 실행 권한을 부여하지 않습니다.

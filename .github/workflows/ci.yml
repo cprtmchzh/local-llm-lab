@@ -1,0 +1,37 @@
+name: CI and benchmark evidence
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Recompute and verify benchmark evidence
+        run: python -m benchmark.evidence --review-bundle review_bundle
+
+      - name: Preserve review evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: review-bundle-${{ github.sha }}
+          path: review_bundle/
+          if-no-files-found: error
+          retention-days: 30
